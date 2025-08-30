@@ -1,0 +1,27 @@
+# Rascunho de Ideias
+
+## Cadastrar iniciativa pra jogadores e inimigos
+
+## Gerador de Nomes aleatórios para inimigos
+
+## cadastrar defesa de inimigos e jogadores
+
+## cadastrar jogadores recorrentes
+
+- cadastrar jogadores (editáveis) que podem ser automaticamente adicionados à iniciativa
+
+## opção de rolar a iniciativa de novo no início de cada rodada
+
+## rolar elementos da cena
+
+- rolar quantos e quais elementos estão na cena de um combate
+
+- elementos podem ser:
+
+  - coberturas
+  - armadilhas
+  - obstáculos
+  - elementos naturais (como areia, água, vinhas, etc)
+
+- primeiro deve ser preciso escolher o bioma do combate, e os elementos são gerados a partir dos biomas
+  - o bioma urbano pode atrair curiosos, por exemplo
