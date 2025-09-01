@@ -25,3 +25,8 @@
 
 - primeiro deve ser preciso escolher o bioma do combate, e os elementos são gerados a partir dos biomas
   - o bioma urbano pode atrair curiosos, por exemplo
+
+## marcar se/quem atacou no turno atual, para mecânica de travar e errar ataques
+
+- assim, vai ser automática a mensagem avisando da trava de ataques
+- isso também permite diminuir as defesas e restaurá-las automaticamente
