@@ -30,3 +30,7 @@
 
 - assim, vai ser automática a mensagem avisando da trava de ataques
 - isso também permite diminuir as defesas e restaurá-las automaticamente
+
+## mostrar rodada atual e quanto tempo passou em real-time
+
+- ser possível colocar eventos que expiram em X rodadas
