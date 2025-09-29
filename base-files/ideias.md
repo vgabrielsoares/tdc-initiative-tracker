@@ -34,3 +34,12 @@
 ## mostrar rodada atual e quanto tempo passou em real-time
 
 - ser possível colocar eventos que expiram em X rodadas
+
+## randomizador de escolha de um jogador
+
+- pode ser interessante um randomizador pra escolher aleatoriamente o alvo de um ataque
+- o randomizador pode ter alguns critérios, como os de maior defesa, menor defesa, mais feridos, ou completamente aleatórios, etc
+
+## modularização de funcionalidades
+
+- fazer uma lista de seleção on/off das funcionalidades do tracker, permitindo que o usuário escolha o que ele vai usar ou não no programa, podendo deixar apenas o básico do básico se preferir
