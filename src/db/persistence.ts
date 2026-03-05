@@ -1,6 +1,6 @@
 import { db } from "./database";
 import type { Combat } from "@/types/combat";
-import type { Character } from "@/types/character";
+import type { Character, SavedCharacter } from "@/types/character";
 import type { AppliedCondition } from "@/types/conditions";
 
 export function persistCombat(combat: Combat) {
@@ -50,4 +50,16 @@ export async function loadCombatData(combatId: string) {
       : [];
 
   return { combat, characters, conditions };
+}
+
+export function persistSavedCharacter(character: SavedCharacter) {
+  return db.savedCharacters.put(character);
+}
+
+export function deletePersistedSavedCharacter(id: string) {
+  return db.savedCharacters.delete(id);
+}
+
+export async function loadAllSavedCharacters(): Promise<SavedCharacter[]> {
+  return db.savedCharacters.toArray();
 }
