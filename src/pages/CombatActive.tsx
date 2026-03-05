@@ -3,8 +3,10 @@ import { ChevronLeft, ChevronRight, RotateCcw, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CombatOrder } from "@/components/CombatOrder";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
+import { ConditionPicker } from "@/components/ConditionPicker";
 import { useCombatStore } from "@/store/combatStore";
 import { PHASE_CONFIG } from "@/types/combat";
+import type { ConditionName } from "@/types/conditions";
 import {
   getAvailableCharacters,
   isLastPhase,
@@ -15,8 +17,11 @@ export function CombatActive() {
   const {
     combat,
     characters,
+    conditions,
     toggleCharacterActed,
     updateCharacter,
+    addCondition,
+    removeCondition,
     advancePhase,
     goToPreviousPhase,
     advanceRound,
@@ -26,6 +31,9 @@ export function CombatActive() {
   const [endPhaseOpen, setEndPhaseOpen] = useState(false);
   const [endRoundOpen, setEndRoundOpen] = useState(false);
   const [endCombatOpen, setEndCombatOpen] = useState(false);
+  const [conditionPickerCharId, setConditionPickerCharId] = useState<
+    string | null
+  >(null);
 
   if (!combat) return null;
 
@@ -64,6 +72,18 @@ export function CombatActive() {
     endCombat();
   }
 
+  function handleApplyCondition(
+    conditionName: ConditionName,
+    remainingRounds?: number,
+  ) {
+    if (!conditionPickerCharId) return;
+    addCondition(conditionPickerCharId, conditionName, remainingRounds);
+  }
+
+  const pickerCharacter = conditionPickerCharId
+    ? characters.find((c) => c.id === conditionPickerCharId)
+    : null;
+
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
       <div className="flex flex-col gap-6">
@@ -94,8 +114,11 @@ export function CombatActive() {
           availableCharacters={available}
           actedCharacterIds={combat.actedCharacterIds}
           turnType={phaseConfig.turnType}
+          conditions={conditions}
           onToggle={toggleCharacterActed}
           onUpdateCharacter={updateCharacter}
+          onAddCondition={setConditionPickerCharId}
+          onRemoveCondition={removeCondition}
         />
 
         {/* Action bar */}
@@ -170,6 +193,16 @@ export function CombatActive() {
         confirmLabel="Encerrar"
         variant="destructive"
         onConfirm={handleEndCombat}
+      />
+
+      {/* Condition picker */}
+      <ConditionPicker
+        open={conditionPickerCharId !== null}
+        onOpenChange={(open) => {
+          if (!open) setConditionPickerCharId(null);
+        }}
+        characterName={pickerCharacter?.name ?? ""}
+        onApply={handleApplyCondition}
       />
     </div>
   );

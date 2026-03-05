@@ -1,25 +1,35 @@
+import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import { NPCCard } from "@/components/NPCCard";
+import { ConditionBadges } from "@/components/ConditionBadges";
 import type { Character } from "@/types/character";
+import type { AppliedCondition } from "@/types/conditions";
 import type { TurnType } from "@/types/combat";
 
 interface CombatOrderProps {
   availableCharacters: Character[];
   actedCharacterIds: string[];
   turnType: TurnType;
+  conditions: AppliedCondition[];
   onToggle: (characterId: string) => void;
   onUpdateCharacter: (
     id: string,
     updates: { guard?: number; vitality?: number; defeated?: boolean },
   ) => void;
+  onAddCondition: (characterId: string) => void;
+  onRemoveCondition: (conditionId: string) => void;
 }
 
 export function CombatOrder({
   availableCharacters,
   actedCharacterIds,
   turnType,
+  conditions,
   onToggle,
   onUpdateCharacter,
+  onAddCondition,
+  onRemoveCondition,
 }: CombatOrderProps) {
   const actedSet = new Set(actedCharacterIds);
 
@@ -36,6 +46,10 @@ export function CombatOrder({
       {availableCharacters.map((character) => {
         const acted = actedSet.has(character.id);
 
+        const charConditions = conditions.filter(
+          (c) => c.characterId === character.id,
+        );
+
         if (character.role === "npc") {
           return (
             <NPCCard
@@ -44,6 +58,7 @@ export function CombatOrder({
               acted={acted}
               isInActiveTurn={true}
               turnType={turnType}
+              conditions={charConditions}
               onToggle={() => onToggle(character.id)}
               onUpdateGuard={(v) =>
                 onUpdateCharacter(character.id, { guard: v })
@@ -56,6 +71,8 @@ export function CombatOrder({
                   defeated: !character.defeated,
                 })
               }
+              onAddCondition={() => onAddCondition(character.id)}
+              onRemoveCondition={onRemoveCondition}
             />
           );
         }
@@ -83,6 +100,23 @@ export function CombatOrder({
                 ✓ Agiu nesta fase
               </span>
             )}
+            {charConditions.length > 0 && (
+              <ConditionBadges
+                conditions={charConditions}
+                onRemove={onRemoveCondition}
+              />
+            )}
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddCondition(character.id);
+              }}
+              aria-label="Adicionar condição"
+            >
+              <Plus className="size-3" />
+            </Button>
           </button>
         );
       })}

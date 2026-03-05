@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Shield, Heart, Skull } from "lucide-react";
+import { Shield, Heart, Skull, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ActionTracker } from "@/components/ActionTracker";
+import { ConditionBadges } from "@/components/ConditionBadges";
 import type { NpcCharacter } from "@/types/character";
+import type { AppliedCondition } from "@/types/conditions";
 import type { TurnType } from "@/types/combat";
 
 interface NPCCardProps {
@@ -12,10 +14,13 @@ interface NPCCardProps {
   acted: boolean;
   isInActiveTurn: boolean;
   turnType: TurnType;
+  conditions: AppliedCondition[];
   onToggle: () => void;
   onUpdateGuard: (value: number) => void;
   onUpdateVitality: (value: number) => void;
   onToggleDefeated: () => void;
+  onAddCondition: () => void;
+  onRemoveCondition: (conditionId: string) => void;
 }
 
 export function NPCCard({
@@ -23,10 +28,13 @@ export function NPCCard({
   acted,
   isInActiveTurn,
   turnType,
+  conditions,
   onToggle,
   onUpdateGuard,
   onUpdateVitality,
   onToggleDefeated,
+  onAddCondition,
+  onRemoveCondition,
 }: NPCCardProps) {
   const [usedActions, setUsedActions] = useState(0);
   const [usedReaction, setUsedReaction] = useState(false);
@@ -129,6 +137,27 @@ export function NPCCard({
           onToggleAction={handleToggleAction}
           onToggleReaction={() => setUsedReaction((v) => !v)}
         />
+      )}
+
+      {/* Conditions */}
+      {!character.defeated && (
+        <div className="flex items-center gap-2">
+          <ConditionBadges
+            conditions={conditions}
+            onRemove={onRemoveCondition}
+          />
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddCondition();
+            }}
+            aria-label="Adicionar condição"
+          >
+            <Plus className="size-3" />
+          </Button>
+        </div>
       )}
     </div>
   );
