@@ -16,6 +16,7 @@ export function CombatActive() {
     combat,
     characters,
     toggleCharacterActed,
+    updateCharacter,
     advancePhase,
     goToPreviousPhase,
     advanceRound,
@@ -92,7 +93,9 @@ export function CombatActive() {
         <CombatOrder
           availableCharacters={available}
           actedCharacterIds={combat.actedCharacterIds}
+          turnType={phaseConfig.turnType}
           onToggle={toggleCharacterActed}
+          onUpdateCharacter={updateCharacter}
         />
 
         {/* Action bar */}

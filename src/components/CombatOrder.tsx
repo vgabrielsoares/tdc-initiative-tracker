@@ -1,16 +1,25 @@
 import { cn } from "@/lib/utils";
+import { NPCCard } from "@/components/NPCCard";
 import type { Character } from "@/types/character";
+import type { TurnType } from "@/types/combat";
 
 interface CombatOrderProps {
   availableCharacters: Character[];
   actedCharacterIds: string[];
+  turnType: TurnType;
   onToggle: (characterId: string) => void;
+  onUpdateCharacter: (
+    id: string,
+    updates: { guard?: number; vitality?: number; defeated?: boolean },
+  ) => void;
 }
 
 export function CombatOrder({
   availableCharacters,
   actedCharacterIds,
+  turnType,
   onToggle,
+  onUpdateCharacter,
 }: CombatOrderProps) {
   const actedSet = new Set(actedCharacterIds);
 
@@ -26,6 +35,31 @@ export function CombatOrder({
     <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
       {availableCharacters.map((character) => {
         const acted = actedSet.has(character.id);
+
+        if (character.role === "npc") {
+          return (
+            <NPCCard
+              key={character.id}
+              character={character}
+              acted={acted}
+              isInActiveTurn={true}
+              turnType={turnType}
+              onToggle={() => onToggle(character.id)}
+              onUpdateGuard={(v) =>
+                onUpdateCharacter(character.id, { guard: v })
+              }
+              onUpdateVitality={(v) =>
+                onUpdateCharacter(character.id, { vitality: v })
+              }
+              onToggleDefeated={() =>
+                onUpdateCharacter(character.id, {
+                  defeated: !character.defeated,
+                })
+              }
+            />
+          );
+        }
+
         return (
           <button
             key={character.id}
@@ -40,15 +74,8 @@ export function CombatOrder({
           >
             <div className="flex w-full items-center justify-between">
               <span className="font-semibold">{character.name}</span>
-              <span
-                className={cn(
-                  "text-xs font-medium uppercase",
-                  character.role === "pj"
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-orange-600 dark:text-orange-400",
-                )}
-              >
-                {character.role === "pj" ? "PJ" : "NPC"}
+              <span className="text-xs font-medium uppercase text-blue-600 dark:text-blue-400">
+                PJ
               </span>
             </div>
             {acted && (
