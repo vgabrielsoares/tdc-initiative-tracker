@@ -1,7 +1,15 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, RotateCcw, Flag } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+  Flag,
+  Users,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CombatOrder } from "@/components/CombatOrder";
+import { CharacterSidebar } from "@/components/CharacterSidebar";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import { ConditionPicker } from "@/components/ConditionPicker";
 import { useCombatStore } from "@/store/combatStore";
@@ -18,7 +26,9 @@ export function CombatActive() {
     combat,
     characters,
     conditions,
+    npcReactions,
     toggleCharacterActed,
+    toggleNPCReaction,
     updateCharacter,
     addCondition,
     removeCondition,
@@ -31,6 +41,7 @@ export function CombatActive() {
   const [endPhaseOpen, setEndPhaseOpen] = useState(false);
   const [endRoundOpen, setEndRoundOpen] = useState(false);
   const [endCombatOpen, setEndCombatOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [conditionPickerCharId, setConditionPickerCharId] = useState<
     string | null
   >(null);
@@ -74,10 +85,10 @@ export function CombatActive() {
 
   function handleApplyCondition(
     conditionName: ConditionName,
-    remainingRounds?: number,
+    remainingTurns?: number,
   ) {
     if (!conditionPickerCharId) return;
-    addCondition(conditionPickerCharId, conditionName, remainingRounds);
+    addCondition(conditionPickerCharId, conditionName, remainingTurns);
   }
 
   const pickerCharacter = conditionPickerCharId
@@ -85,80 +96,139 @@ export function CombatActive() {
     : null;
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-8">
-      <div className="flex flex-col gap-6">
-        {/* Header: round & phase info */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Combate Ativo</h1>
-          <div className="flex items-center gap-3">
-            <span className="rounded-md bg-secondary px-3 py-1 text-sm font-semibold">
-              Rodada {combat.currentRound}
-            </span>
-            <span className="rounded-md bg-primary px-3 py-1 text-sm font-semibold text-primary-foreground">
-              {phaseConfig.label}
-            </span>
+    <div className="flex min-h-[calc(100dvh-3.5rem)]">
+      {/* Main content */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-3xl px-4 py-6">
+          <div className="flex flex-col gap-6">
+            {/* Header: round & phase info */}
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">Combate Ativo</h1>
+              <div className="flex items-center gap-2">
+                <span className="rounded-md bg-secondary px-3 py-1 text-sm font-semibold">
+                  Rodada {combat.currentRound}
+                </span>
+                <span className="rounded-md bg-primary px-3 py-1 text-sm font-semibold text-primary-foreground">
+                  {phaseConfig.label}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  className="lg:hidden"
+                  onClick={() => setSidebarOpen(true)}
+                  aria-label="Abrir painel de personagens"
+                >
+                  <Users className="size-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Phase info */}
+            <div className="text-sm text-muted-foreground">
+              {phaseConfig.turnType === "fast"
+                ? "Turno Rápido - 2 ações"
+                : "Turno Lento - 3 ações"}
+              {" · "}
+              {actedCount} de {available.length} personagem(ns) agiram
+            </div>
+
+            {/* Character selection grid */}
+            <CombatOrder
+              availableCharacters={available}
+              actedCharacterIds={combat.actedCharacterIds}
+              turnType={phaseConfig.turnType}
+              conditions={conditions}
+              npcReactions={npcReactions}
+              onToggle={toggleCharacterActed}
+              onToggleNPCReaction={toggleNPCReaction}
+              onUpdateCharacter={updateCharacter}
+              onAddCondition={setConditionPickerCharId}
+              onRemoveCondition={removeCondition}
+            />
+
+            {/* Action bar */}
+            <div className="flex items-center justify-between border-t pt-4">
+              <div className="flex gap-2">
+                {noOneActed && !firstPhase && (
+                  <Button variant="outline" size="sm" onClick={handleGoBack}>
+                    <ChevronLeft />
+                    Fase Anterior
+                  </Button>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEndCombatOpen(true)}
+                >
+                  <Flag />
+                  Encerrar Combate
+                </Button>
+
+                <Button size="sm" onClick={handleEndPhaseClick}>
+                  {lastPhase ? (
+                    <>
+                      <RotateCcw />
+                      Encerrar Rodada
+                    </>
+                  ) : (
+                    <>
+                      Encerrar Fase
+                      <ChevronRight />
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
+      </main>
 
-        {/* Phase info */}
-        <div className="text-sm text-muted-foreground">
-          {phaseConfig.turnType === "fast"
-            ? "▶▶ Turno Rápido — 2 ações"
-            : "▶▶▶ Turno Lento — 3 ações"}
-          {" · "}
-          {actedCount} de {available.length} personagem(ns) agiram
-        </div>
-
-        {/* Character selection grid */}
-        <CombatOrder
-          availableCharacters={available}
-          actedCharacterIds={combat.actedCharacterIds}
-          turnType={phaseConfig.turnType}
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:block w-80 shrink-0 border-l bg-card overflow-y-auto">
+        <CharacterSidebar
+          characters={characters}
           conditions={conditions}
-          onToggle={toggleCharacterActed}
+          npcReactions={npcReactions}
           onUpdateCharacter={updateCharacter}
+          onToggleNPCReaction={toggleNPCReaction}
           onAddCondition={setConditionPickerCharId}
           onRemoveCondition={removeCondition}
         />
+      </aside>
 
-        {/* Action bar */}
-        <div className="flex items-center justify-between border-t pt-4">
-          <div className="flex gap-2">
-            {/* Go back to previous phase (only if no one acted & not first phase) */}
-            {noOneActed && !firstPhase && (
-              <Button variant="outline" size="sm" onClick={handleGoBack}>
-                <ChevronLeft />
-                Fase Anterior
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+          <aside className="fixed top-14 bottom-0 right-0 z-50 w-80 bg-card border-l overflow-y-auto lg:hidden">
+            <div className="flex items-center justify-between border-b px-4 py-2">
+              <span className="font-semibold text-sm">Personagens</span>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setSidebarOpen(false)}
+              >
+                <X className="size-4" />
               </Button>
-            )}
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setEndCombatOpen(true)}
-            >
-              <Flag />
-              Encerrar Combate
-            </Button>
-
-            <Button size="sm" onClick={handleEndPhaseClick}>
-              {lastPhase ? (
-                <>
-                  <RotateCcw />
-                  Encerrar Rodada
-                </>
-              ) : (
-                <>
-                  Encerrar Fase
-                  <ChevronRight />
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </div>
+            </div>
+            <CharacterSidebar
+              characters={characters}
+              conditions={conditions}
+              npcReactions={npcReactions}
+              onUpdateCharacter={updateCharacter}
+              onToggleNPCReaction={toggleNPCReaction}
+              onAddCondition={setConditionPickerCharId}
+              onRemoveCondition={removeCondition}
+            />
+          </aside>
+        </>
+      )}
 
       {/* End phase confirmation */}
       <ConfirmationModal

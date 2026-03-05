@@ -108,9 +108,12 @@ export const CONDITION_CATEGORIES: Record<ConditionName, ConditionCategory> = {
   [ConditionName.Manipulado]: ConditionCategory.Espiritual,
 };
 
+import type { TurnType } from "./combat";
+
 export interface AppliedCondition {
   id: string;
   characterId: string;
   conditionName: ConditionName;
-  remainingRounds?: number;
+  remainingTurns?: number; // Número de vezes que o tipo de turno precisa ocorrer
+  appliedAtTurnType?: TurnType; // Tipo de turno em que foi aplicada
 }

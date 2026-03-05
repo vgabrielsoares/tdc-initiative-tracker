@@ -31,3 +31,12 @@ export type CharacterUpdateData = {
   defense?: number;
   defeated?: boolean;
 };
+
+export interface SavedCharacter {
+  id: string;
+  name: string;
+  role: CharacterRole;
+  guard?: number;
+  vitality?: number;
+  defense?: number;
+}

@@ -5,6 +5,7 @@ import type {
   Character,
   NewCharacterData,
   CharacterUpdateData,
+  SavedCharacter,
 } from "@/types/character";
 import type { AppliedCondition, ConditionName } from "@/types/conditions";
 import {
@@ -16,6 +17,9 @@ import {
   persistConditionsBulk,
   deletePersistedConditionsBulk,
   loadCombatData,
+  persistSavedCharacter,
+  deletePersistedSavedCharacter,
+  loadAllSavedCharacters,
 } from "@/db/persistence";
 
 // ---------------------------------------------------------------------------
@@ -27,6 +31,8 @@ interface CombatState {
   combat: Combat | null;
   characters: Character[];
   conditions: AppliedCondition[];
+  savedCharacters: SavedCharacter[];
+  npcReactions: Record<string, boolean>;
 
   // Combat lifecycle
   createCombat: () => void;
@@ -45,15 +51,21 @@ interface CombatState {
 
   // Turn selection
   toggleCharacterActed: (characterId: string) => void;
+  toggleNPCReaction: (characterId: string) => void;
 
   // Conditions
   addCondition: (
     characterId: string,
     conditionName: ConditionName,
-    remainingRounds?: number,
+    remainingTurns?: number,
   ) => void;
   removeCondition: (conditionId: string) => void;
   decrementConditionDurations: () => void;
+
+  // Saved characters
+  loadSavedCharacters: () => Promise<void>;
+  addSavedCharacter: (data: Omit<SavedCharacter, "id">) => void;
+  removeSavedCharacter: (id: string) => void;
 
   // Persistence
   loadCombat: (combatId: string) => Promise<void>;
@@ -69,6 +81,8 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
   combat: null,
   characters: [],
   conditions: [],
+  savedCharacters: [],
+  npcReactions: {},
 
   // -- Combat lifecycle -----------------------------------------------------
 
@@ -113,7 +127,8 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     const currentIndex = PHASE_ORDER.indexOf(combat.currentPhase);
     if (currentIndex >= PHASE_ORDER.length - 1) return;
 
-    const isFastPhase = PHASE_CONFIG[combat.currentPhase].turnType === "fast";
+    const currentTurnType = PHASE_CONFIG[combat.currentPhase].turnType;
+    const isFastPhase = currentTurnType === "fast";
     const nextPhase = PHASE_ORDER[currentIndex + 1];
 
     const updatedCombat: Combat = {
@@ -175,7 +190,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       fastTurnCharacterIds: [],
     };
 
-    set({ combat: updatedCombat });
+    set({ combat: updatedCombat, npcReactions: {} });
     persistCombat(updatedCombat);
     get().decrementConditionDurations();
   },
@@ -231,18 +246,29 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     persistCombat(updatedCombat);
   },
 
+  toggleNPCReaction: (characterId: string) => {
+    set((state) => ({
+      npcReactions: {
+        ...state.npcReactions,
+        [characterId]: !state.npcReactions[characterId],
+      },
+    }));
+  },
+
   // -- Conditions -----------------------------------------------------------
 
   addCondition: (
     characterId: string,
     conditionName: ConditionName,
-    remainingRounds?: number,
+    remainingTurns?: number,
   ) => {
     const condition: AppliedCondition = {
       id: crypto.randomUUID(),
       characterId,
       conditionName,
-      remainingRounds,
+      remainingTurns,
+      appliedAtTurnType:
+        PHASE_CONFIG[get().combat?.currentPhase ?? Phase.PlayerFast].turnType,
     };
 
     set((state) => ({ conditions: [...state.conditions, condition] }));
@@ -262,12 +288,12 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     const expiredIds: string[] = [];
 
     for (const c of conditions) {
-      if (c.remainingRounds === undefined) {
+      if (c.remainingTurns === undefined) {
         kept.push(c);
-      } else if (c.remainingRounds <= 1) {
+      } else if (c.remainingTurns <= 1) {
         expiredIds.push(c.id);
       } else {
-        kept.push({ ...c, remainingRounds: c.remainingRounds - 1 });
+        kept.push({ ...c, remainingTurns: c.remainingTurns - 1 });
       }
     }
 
@@ -294,5 +320,31 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     if (lastCombatId) {
       await get().loadCombat(lastCombatId);
     }
+    await get().loadSavedCharacters();
+  },
+
+  // -- Saved characters -----------------------------------------------------
+
+  loadSavedCharacters: async () => {
+    const saved = await loadAllSavedCharacters();
+    set({ savedCharacters: saved });
+  },
+
+  addSavedCharacter: (data: Omit<SavedCharacter, "id">) => {
+    const saved: SavedCharacter = {
+      id: crypto.randomUUID(),
+      ...data,
+    };
+    set((state) => ({
+      savedCharacters: [...state.savedCharacters, saved],
+    }));
+    persistSavedCharacter(saved);
+  },
+
+  removeSavedCharacter: (id: string) => {
+    set((state) => ({
+      savedCharacters: state.savedCharacters.filter((c) => c.id !== id),
+    }));
+    deletePersistedSavedCharacter(id);
   },
 }));
