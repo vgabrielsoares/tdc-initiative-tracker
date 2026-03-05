@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TDC Initiative Tracker</title>
+    <script>
+      // Store the path the user was trying to access
+      (function () {
+        const path = window.location.pathname.replace(
+          "/tdc-initiative-tracker/",
+          "",
+        );
+        if (path && path !== "/") {
+          sessionStorage.setItem("redirect", "/" + path);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <noscript>
+      <h1>JavaScript is required to run this application</h1>
+    </noscript>
+    <script>
+      // Redirect to index.html, which will load and handle routing
+      window.location.href = "/tdc-initiative-tracker/";
+    </script>
+  </body>
+</html>
