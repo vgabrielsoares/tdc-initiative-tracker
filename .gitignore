@@ -1,0 +1,23 @@
+# Dependencies
+node_modules
+dist
+dist-ssr
+
+# Editor
+*.local
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Env
+.env
+.env.*
+
+# Dev planning (local only)
+.github
+initiative-tracker-development-plan.md
+dev-plan-initiative-tracker-v0.1.md
