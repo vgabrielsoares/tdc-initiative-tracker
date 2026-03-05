@@ -28,7 +28,7 @@ export function CharacterList({
     <div className="flex flex-col gap-4">
       {pjs.length > 0 && (
         <CharacterGroup
-          title="PJs — Personagens Jogadores"
+          title="PJs - Personagens Jogadores"
           characters={pjs}
           onEdit={onEdit}
           onRemove={onRemove}

@@ -37,7 +37,7 @@ interface ConditionPickerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   characterName: string;
-  onApply: (conditionName: ConditionNameType, remainingRounds?: number) => void;
+  onApply: (conditionName: ConditionNameType, remainingTurns?: number) => void;
 }
 
 export function ConditionPicker({
@@ -79,7 +79,7 @@ export function ConditionPicker({
     >
       <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Aplicar Condição — {characterName}</DialogTitle>
+          <DialogTitle>Aplicar Condição - {characterName}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4">

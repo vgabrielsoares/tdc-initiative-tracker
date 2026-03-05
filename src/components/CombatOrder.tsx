@@ -1,9 +1,11 @@
-import { Plus } from "lucide-react";
+import { useState } from "react";
+import { Plus, Play, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { NPCCard } from "@/components/NPCCard";
 import { ConditionBadges } from "@/components/ConditionBadges";
 import type { Character } from "@/types/character";
+import type { CharacterUpdateData } from "@/types/character";
 import type { AppliedCondition } from "@/types/conditions";
 import type { TurnType } from "@/types/combat";
 
@@ -12,11 +14,10 @@ interface CombatOrderProps {
   actedCharacterIds: string[];
   turnType: TurnType;
   conditions: AppliedCondition[];
+  npcReactions: Record<string, boolean>;
   onToggle: (characterId: string) => void;
-  onUpdateCharacter: (
-    id: string,
-    updates: { guard?: number; vitality?: number; defeated?: boolean },
-  ) => void;
+  onToggleNPCReaction: (characterId: string) => void;
+  onUpdateCharacter: (id: string, updates: CharacterUpdateData) => void;
   onAddCondition: (characterId: string) => void;
   onRemoveCondition: (conditionId: string) => void;
 }
@@ -26,12 +27,16 @@ export function CombatOrder({
   actedCharacterIds,
   turnType,
   conditions,
+  npcReactions,
   onToggle,
+  onToggleNPCReaction,
   onUpdateCharacter,
   onAddCondition,
   onRemoveCondition,
 }: CombatOrderProps) {
   const actedSet = new Set(actedCharacterIds);
+  const [editingIds, setEditingIds] = useState<Set<string>>(new Set());
+  const [editedNames, setEditedNames] = useState<Record<string, string>>({});
 
   if (availableCharacters.length === 0) {
     return (
@@ -59,7 +64,9 @@ export function CombatOrder({
               isInActiveTurn={true}
               turnType={turnType}
               conditions={charConditions}
+              usedReaction={npcReactions[character.id] ?? false}
               onToggle={() => onToggle(character.id)}
+              onToggleReaction={() => onToggleNPCReaction(character.id)}
               onUpdateGuard={(v) =>
                 onUpdateCharacter(character.id, { guard: v })
               }
@@ -71,35 +78,91 @@ export function CombatOrder({
                   defeated: !character.defeated,
                 })
               }
+              onUpdateName={(name) => onUpdateCharacter(character.id, { name })}
               onAddCondition={() => onAddCondition(character.id)}
               onRemoveCondition={onRemoveCondition}
             />
           );
         }
 
+        const isEditing = editingIds.has(character.id);
+        const displayName = editedNames[character.id] ?? character.name;
+
         return (
-          <button
+          <div
             key={character.id}
-            type="button"
-            onClick={() => onToggle(character.id)}
             className={cn(
-              "flex flex-col items-start gap-1 rounded-lg border-2 px-4 py-3 text-left transition-colors",
+              "flex flex-col gap-2 rounded-lg border-2 px-4 py-3 transition-all duration-200",
               acted
-                ? "border-primary bg-primary/10 text-foreground"
-                : "border-border bg-card text-foreground hover:border-primary/50 hover:bg-accent",
+                ? "border-primary bg-gradient-to-br from-primary/10 to-primary/5 shadow-sm"
+                : "border-border bg-gradient-to-br from-card to-background hover:shadow-md",
             )}
           >
-            <div className="flex w-full items-center justify-between">
-              <span className="font-semibold">{character.name}</span>
-              <span className="text-xs font-medium uppercase text-blue-600 dark:text-blue-400">
-                PJ
-              </span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                {isEditing ? (
+                  <input
+                    type="text"
+                    autoFocus
+                    value={displayName}
+                    onChange={(e) =>
+                      setEditedNames((prev) => ({
+                        ...prev,
+                        [character.id]: e.target.value,
+                      }))
+                    }
+                    onBlur={() => {
+                      if (
+                        displayName.trim() &&
+                        displayName !== character.name
+                      ) {
+                        onUpdateCharacter(character.id, { name: displayName });
+                      }
+                      setEditingIds((prev) => {
+                        const next = new Set(prev);
+                        next.delete(character.id);
+                        return next;
+                      });
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") e.currentTarget.blur();
+                    }}
+                    className="flex-1 min-w-0 px-2 py-1 text-sm font-semibold bg-background border border-input rounded"
+                  />
+                ) : (
+                  <>
+                    <span className="font-semibold truncate">
+                      {displayName}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={() =>
+                        setEditingIds(
+                          (prev) => new Set([...prev, character.id]),
+                        )
+                      }
+                      className="shrink-0"
+                      aria-label="Editar nome"
+                    >
+                      <Edit2 className="size-3" />
+                    </Button>
+                  </>
+                )}
+                <span className="shrink-0 text-xs font-medium uppercase text-blue-600 dark:text-blue-400">
+                  PJ
+                </span>
+              </div>
+              <Button
+                variant={acted ? "secondary" : "default"}
+                size="sm"
+                onClick={() => onToggle(character.id)}
+                className="shrink-0 gap-1.5"
+              >
+                <Play className="size-4" fill="currentColor" />
+                {acted ? "Desfazer" : "Agir"}
+              </Button>
             </div>
-            {acted && (
-              <span className="text-xs text-muted-foreground">
-                ✓ Agiu nesta fase
-              </span>
-            )}
             {charConditions.length > 0 && (
               <ConditionBadges
                 conditions={charConditions}
@@ -107,17 +170,15 @@ export function CombatOrder({
               />
             )}
             <Button
-              variant="ghost"
-              size="icon-xs"
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddCondition(character.id);
-              }}
-              aria-label="Adicionar condição"
+              variant="outline"
+              size="xs"
+              onClick={() => onAddCondition(character.id)}
+              className="self-start gap-1"
             >
               <Plus className="size-3" />
+              Condição
             </Button>
-          </button>
+          </div>
         );
       })}
     </div>

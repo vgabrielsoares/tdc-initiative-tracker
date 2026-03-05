@@ -38,8 +38,8 @@ export function ConditionBadges({
             )}
           >
             {c.conditionName}
-            {c.remainingRounds !== undefined && (
-              <span className="opacity-70">({c.remainingRounds}r)</span>
+            {c.remainingTurns !== undefined && (
+              <span className="opacity-70">({c.remainingTurns}t)</span>
             )}
             <button
               type="button"
