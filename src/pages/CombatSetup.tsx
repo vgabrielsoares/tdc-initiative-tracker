@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Swords, Trash2 } from "lucide-react";
+import { Plus, Swords, Trash2, Shield, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CharacterForm } from "@/components/CharacterForm";
 import { CharacterList } from "@/components/CharacterList";
@@ -127,9 +127,12 @@ export function CombatSetup() {
                         {saved.role}
                       </span>
                       {saved.role === "npc" && (
-                        <span className="shrink-0 text-xs text-muted-foreground">
-                          🛡 {saved.guard} ❤ {saved.vitality} Def{" "}
-                          {saved.defense}
+                        <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Shield className="size-4 text-blue-500" />
+                          <span>{saved.guard}</span>
+                          <Heart className="size-4 text-red-500" />
+                          <span>{saved.vitality}</span>
+                          <span>Def {saved.defense}</span>
                         </span>
                       )}
                     </div>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Shield, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -149,7 +150,13 @@ export function CharacterForm({
             (isEditing && editingCharacter.role === "npc")) && (
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-2">
-                <Label htmlFor="char-guard">Guarda 🛡</Label>
+                <Label
+                  htmlFor="char-guard"
+                  className="flex items-center gap-1.5"
+                >
+                  <Shield className="size-4 text-blue-500" />
+                  Guarda
+                </Label>
                 <Input
                   id="char-guard"
                   type="number"
@@ -159,7 +166,13 @@ export function CharacterForm({
                 />
               </div>
               <div className="flex flex-col gap-2">
-                <Label htmlFor="char-vitality">Vitalidade ❤</Label>
+                <Label
+                  htmlFor="char-vitality"
+                  className="flex items-center gap-1.5"
+                >
+                  <Heart className="size-4 text-red-500" />
+                  Vitalidade
+                </Label>
                 <Input
                   id="char-vitality"
                   type="number"

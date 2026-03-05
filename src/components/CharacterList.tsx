@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Shield, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Character } from "@/types/character";
 
@@ -90,9 +90,12 @@ function CharacterRow({
       <div className="flex items-center gap-3">
         <span className="font-medium">{character.name}</span>
         {character.role === "npc" && (
-          <span className="text-xs text-muted-foreground">
-            🛡 {character.guard} &nbsp; ❤ {character.vitality} &nbsp; Def{" "}
-            {character.defense}
+          <span className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Shield className="size-4 text-blue-500" />
+            <span>{character.guard}</span>
+            <Heart className="size-4 text-red-500" />
+            <span>{character.vitality}</span>
+            <span>Def {character.defense}</span>
           </span>
         )}
       </div>
