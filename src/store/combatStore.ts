@@ -49,6 +49,10 @@ interface CombatState {
   updateCharacter: (id: string, updates: CharacterUpdateData) => void;
   removeCharacter: (id: string) => void;
 
+  // Pending characters (mid-combat addition)
+  addPendingCharacter: (data: NewCharacterData) => void;
+  removePendingCharacter: (id: string) => void;
+
   // Turn selection
   toggleCharacterActed: (characterId: string) => void;
   toggleNPCReaction: (characterId: string) => void;
@@ -94,6 +98,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       currentPhase: Phase.PlayerFast,
       actedCharacterIds: [],
       fastTurnCharacterIds: [],
+      pendingCharacterIds: [],
     };
     set({ combat, characters: [], conditions: [] });
     persistCombat(combat);
@@ -188,6 +193,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       currentPhase: Phase.PlayerFast,
       actedCharacterIds: [],
       fastTurnCharacterIds: [],
+      pendingCharacterIds: [],
     };
 
     set({ combat: updatedCombat, npcReactions: {} });
@@ -227,7 +233,65 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       characters: state.characters.filter((c) => c.id !== id),
       conditions: state.conditions.filter((c) => c.characterId !== id),
     }));
+
+    const { combat } = get();
+    if (combat && combat.pendingCharacterIds.includes(id)) {
+      const updatedCombat: Combat = {
+        ...combat,
+        pendingCharacterIds: combat.pendingCharacterIds.filter(
+          (pid) => pid !== id,
+        ),
+      };
+      set({ combat: updatedCombat });
+      persistCombat(updatedCombat);
+    }
+
     deletePersistedCharacter(id);
+  },
+
+  // -- Pending characters (mid-combat) -------------------------------------
+
+  addPendingCharacter: (data: NewCharacterData) => {
+    const { combat } = get();
+    if (!combat || combat.status !== "active") return;
+
+    const character = {
+      ...data,
+      id: crypto.randomUUID(),
+      combatId: combat.id,
+      ...(data.role === "npc" ? { defeated: false } : {}),
+    } as Character;
+
+    const updatedCombat: Combat = {
+      ...combat,
+      pendingCharacterIds: [...combat.pendingCharacterIds, character.id],
+    };
+
+    set((state) => ({
+      characters: [...state.characters, character],
+      combat: updatedCombat,
+    }));
+    persistCharacter(character);
+    persistCombat(updatedCombat);
+  },
+
+  removePendingCharacter: (id: string) => {
+    const { combat } = get();
+    if (!combat) return;
+
+    const updatedCombat: Combat = {
+      ...combat,
+      pendingCharacterIds: combat.pendingCharacterIds.filter(
+        (pid) => pid !== id,
+      ),
+    };
+
+    set((state) => ({
+      characters: state.characters.filter((c) => c.id !== id),
+      combat: updatedCombat,
+    }));
+    deletePersistedCharacter(id);
+    persistCombat(updatedCombat);
   },
 
   // -- Turn selection -------------------------------------------------------

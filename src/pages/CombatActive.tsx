@@ -27,6 +27,7 @@ export function CombatActive() {
     characters,
     conditions,
     npcReactions,
+    savedCharacters,
     toggleCharacterActed,
     toggleNPCReaction,
     updateCharacter,
@@ -36,6 +37,9 @@ export function CombatActive() {
     goToPreviousPhase,
     advanceRound,
     endCombat,
+    addPendingCharacter,
+    removePendingCharacter,
+    addSavedCharacter,
   } = useCombatStore();
 
   const [endPhaseOpen, setEndPhaseOpen] = useState(false);
@@ -53,6 +57,7 @@ export function CombatActive() {
     combat.currentPhase,
     characters,
     combat.fastTurnCharacterIds,
+    combat.pendingCharacterIds,
   );
   const actedCount = combat.actedCharacterIds.length;
   const lastPhase = isLastPhase(combat.currentPhase);
@@ -192,10 +197,15 @@ export function CombatActive() {
           characters={characters}
           conditions={conditions}
           npcReactions={npcReactions}
+          pendingCharacterIds={combat.pendingCharacterIds}
+          savedCharacters={savedCharacters}
           onUpdateCharacter={updateCharacter}
           onToggleNPCReaction={toggleNPCReaction}
           onAddCondition={setConditionPickerCharId}
           onRemoveCondition={removeCondition}
+          onAddPendingCharacter={addPendingCharacter}
+          onRemovePendingCharacter={removePendingCharacter}
+          onAddSavedCharacter={addSavedCharacter}
         />
       </aside>
 
@@ -221,10 +231,15 @@ export function CombatActive() {
               characters={characters}
               conditions={conditions}
               npcReactions={npcReactions}
+              pendingCharacterIds={combat.pendingCharacterIds}
+              savedCharacters={savedCharacters}
               onUpdateCharacter={updateCharacter}
               onToggleNPCReaction={toggleNPCReaction}
               onAddCondition={setConditionPickerCharId}
               onRemoveCondition={removeCondition}
+              onAddPendingCharacter={addPendingCharacter}
+              onRemovePendingCharacter={removePendingCharacter}
+              onAddSavedCharacter={addSavedCharacter}
             />
           </aside>
         </>

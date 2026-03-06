@@ -11,11 +11,14 @@ export function getAvailableCharacters(
   phase: Phase,
   characters: Character[],
   fastTurnCharacterIds: string[],
+  pendingCharacterIds: string[] = [],
 ): Character[] {
   const config = PHASE_CONFIG[phase];
   const fastSet = new Set(fastTurnCharacterIds);
+  const pendingSet = new Set(pendingCharacterIds);
 
   return characters.filter((c) => {
+    if (pendingSet.has(c.id)) return false;
     if (c.role !== config.role) return false;
     if (c.role === "npc" && c.defeated) return false;
     // In slow phases, exclude characters who already acted in the fast phase

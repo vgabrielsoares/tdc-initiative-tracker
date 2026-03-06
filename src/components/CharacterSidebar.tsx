@@ -1,14 +1,30 @@
 import { useState } from "react";
-import { Shield, Heart, Skull, Plus, Edit2, RotateCw } from "lucide-react";
+import {
+  Shield,
+  Heart,
+  Skull,
+  Plus,
+  Edit2,
+  RotateCw,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  UserPlus,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ConditionBadges } from "@/components/ConditionBadges";
 import { ConfirmationModal } from "@/components/ConfirmationModal";
 import type {
   Character,
+  CharacterRole,
   NpcCharacter,
   CharacterUpdateData,
+  NewCharacterData,
+  SavedCharacter,
 } from "@/types/character";
 import type { AppliedCondition } from "@/types/conditions";
 
@@ -16,23 +32,37 @@ interface CharacterSidebarProps {
   characters: Character[];
   conditions: AppliedCondition[];
   npcReactions: Record<string, boolean>;
+  pendingCharacterIds?: string[];
+  savedCharacters?: SavedCharacter[];
   onUpdateCharacter: (id: string, updates: CharacterUpdateData) => void;
   onToggleNPCReaction: (characterId: string) => void;
   onAddCondition: (characterId: string) => void;
   onRemoveCondition: (conditionId: string) => void;
+  onAddPendingCharacter?: (data: NewCharacterData) => void;
+  onRemovePendingCharacter?: (id: string) => void;
+  onAddSavedCharacter?: (data: Omit<SavedCharacter, "id">) => void;
 }
 
 export function CharacterSidebar({
   characters,
   conditions,
   npcReactions,
+  pendingCharacterIds = [],
+  savedCharacters = [],
   onUpdateCharacter,
   onToggleNPCReaction,
   onAddCondition,
   onRemoveCondition,
+  onAddPendingCharacter,
+  onRemovePendingCharacter,
+  onAddSavedCharacter,
 }: CharacterSidebarProps) {
-  const pjs = characters.filter((c) => c.role === "pj");
-  const npcs = characters.filter((c) => c.role === "npc");
+  const pendingSet = new Set(pendingCharacterIds);
+  const activeCharacters = characters.filter((c) => !pendingSet.has(c.id));
+  const pendingCharacters = characters.filter((c) => pendingSet.has(c.id));
+
+  const pjs = activeCharacters.filter((c) => c.role === "pj");
+  const npcs = activeCharacters.filter((c) => c.role === "npc");
   const activeNpcs = npcs.filter((c) => !(c as NpcCharacter).defeated);
   const defeatedNpcs = npcs.filter((c) => (c as NpcCharacter).defeated);
 
@@ -128,6 +158,49 @@ export function CharacterSidebar({
         <p className="text-sm text-muted-foreground">
           Nenhum personagem no combate.
         </p>
+      )}
+
+      {/* Pending characters section */}
+      {pendingCharacters.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <h3 className="text-sm font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+            <Clock className="size-3.5" />
+            Aguardando próxima rodada ({pendingCharacters.length})
+          </h3>
+          {pendingCharacters.map((c) => (
+            <div
+              key={c.id}
+              className="flex items-center justify-between rounded-md border border-dashed border-amber-400/60 bg-amber-50/50 dark:bg-amber-950/20 px-3 py-2"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <Clock className="size-3 shrink-0 text-amber-500" />
+                <span className="text-sm font-medium truncate">{c.name}</span>
+                <span className="shrink-0 text-xs font-medium uppercase text-muted-foreground">
+                  {c.role}
+                </span>
+              </div>
+              {onRemovePendingCharacter && (
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={() => onRemovePendingCharacter(c.id)}
+                  aria-label="Remover personagem pendente"
+                >
+                  <X className="size-3" />
+                </Button>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
+
+      {/* Add character panel */}
+      {onAddPendingCharacter && (
+        <AddCharacterPanel
+          savedCharacters={savedCharacters}
+          onAddCharacter={onAddPendingCharacter}
+          onAddSavedCharacter={onAddSavedCharacter}
+        />
       )}
     </div>
   );
@@ -284,6 +357,268 @@ function SidebarNPCCard({
         variant="destructive"
         onConfirm={() => onUpdateCharacter({ defeated: true })}
       />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Collapsible panel for adding characters mid-combat
+// ---------------------------------------------------------------------------
+
+// Collapsible panel for adding characters mid-combat
+// ---------------------------------------------------------------------------
+
+function AddCharacterPanel({
+  savedCharacters,
+  onAddCharacter,
+  onAddSavedCharacter,
+}: {
+  savedCharacters: SavedCharacter[];
+  onAddCharacter: (data: NewCharacterData) => void;
+  onAddSavedCharacter?: (data: Omit<SavedCharacter, "id">) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState("");
+  const [role, setRole] = useState<CharacterRole>("npc");
+  const [guard, setGuard] = useState(0);
+  const [vitality, setVitality] = useState(0);
+  const [defense, setDefense] = useState(0);
+
+  function resetForm() {
+    setName("");
+    setRole("npc");
+    setGuard(0);
+    setVitality(0);
+    setDefense(0);
+    setShowForm(false);
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
+
+    const data: NewCharacterData =
+      role === "npc"
+        ? { role: "npc", name: trimmedName, guard, vitality, defense }
+        : { role: "pj", name: trimmedName };
+
+    onAddCharacter(data);
+
+    // Auto-save to library
+    if (onAddSavedCharacter) {
+      const exists = savedCharacters.some(
+        (s) => s.name === trimmedName && s.role === role,
+      );
+      if (!exists) {
+        if (role === "npc") {
+          onAddSavedCharacter({
+            name: trimmedName,
+            role: "npc",
+            guard,
+            vitality,
+            defense,
+          });
+        } else {
+          onAddSavedCharacter({ name: trimmedName, role: "pj" });
+        }
+      }
+    }
+
+    resetForm();
+  }
+
+  function handleImportSaved(saved: SavedCharacter) {
+    const data: NewCharacterData =
+      saved.role === "npc"
+        ? {
+            role: "npc",
+            name: saved.name,
+            guard: saved.guard ?? 0,
+            vitality: saved.vitality ?? 0,
+            defense: saved.defense ?? 0,
+          }
+        : { role: "pj", name: saved.name };
+    onAddCharacter(data);
+  }
+
+  return (
+    <div className="border-t mt-2">
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-between px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+      >
+        <span className="flex items-center gap-1.5">
+          <UserPlus className="size-3.5" />
+          Adicionar ao Combate
+        </span>
+        {expanded ? (
+          <ChevronDown className="size-4" />
+        ) : (
+          <ChevronUp className="size-4" />
+        )}
+      </button>
+
+      {expanded && (
+        <div className="flex flex-col gap-3 px-4 pb-4">
+          <p className="text-xs text-muted-foreground">
+            Personagens adicionados entram no início da próxima rodada.
+          </p>
+
+          {/* Saved characters quick-add */}
+          {savedCharacters.length > 0 && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold text-muted-foreground">
+                Biblioteca
+              </span>
+              <div className="max-h-32 overflow-y-auto flex flex-col gap-1">
+                {savedCharacters.map((saved) => (
+                  <div
+                    key={saved.id}
+                    className="flex items-center justify-between rounded-md border bg-background px-2 py-1.5"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs font-medium truncate">
+                        {saved.name}
+                      </span>
+                      <span className="shrink-0 text-[10px] font-medium uppercase text-muted-foreground">
+                        {saved.role}
+                      </span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      className="h-6 text-xs"
+                      onClick={() => handleImportSaved(saved)}
+                    >
+                      <Plus className="size-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Inline form toggle */}
+          {!showForm ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => setShowForm(true)}
+            >
+              <Plus className="size-3.5" />
+              Criar Novo
+            </Button>
+          ) : (
+            <form
+              onSubmit={handleSubmit}
+              className="flex flex-col gap-2 rounded-md border bg-background p-3"
+            >
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="pending-name" className="text-xs">
+                  Nome
+                </Label>
+                <Input
+                  id="pending-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Nome do personagem"
+                  className="h-7 text-xs"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex gap-1.5">
+                <Button
+                  type="button"
+                  variant={role === "pj" ? "default" : "outline"}
+                  size="xs"
+                  onClick={() => setRole("pj")}
+                >
+                  PJ
+                </Button>
+                <Button
+                  type="button"
+                  variant={role === "npc" ? "default" : "outline"}
+                  size="xs"
+                  onClick={() => setRole("npc")}
+                >
+                  NPC
+                </Button>
+              </div>
+
+              {role === "npc" && (
+                <div className="grid grid-cols-3 gap-1.5">
+                  <div className="flex flex-col gap-1">
+                    <Label
+                      htmlFor="pending-guard"
+                      className="flex items-center gap-1 text-[10px]"
+                    >
+                      <Shield className="size-3 text-blue-500" />
+                      Guarda
+                    </Label>
+                    <Input
+                      id="pending-guard"
+                      type="number"
+                      min={0}
+                      value={guard}
+                      onChange={(e) => setGuard(Number(e.target.value))}
+                      className="h-7 text-xs"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Label
+                      htmlFor="pending-vitality"
+                      className="flex items-center gap-1 text-[10px]"
+                    >
+                      <Heart className="size-3 text-red-500" />
+                      Vitalidade
+                    </Label>
+                    <Input
+                      id="pending-vitality"
+                      type="number"
+                      min={0}
+                      value={vitality}
+                      onChange={(e) => setVitality(Number(e.target.value))}
+                      className="h-7 text-xs"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <Label htmlFor="pending-defense" className="text-[10px]">
+                      Defesa
+                    </Label>
+                    <Input
+                      id="pending-defense"
+                      type="number"
+                      min={0}
+                      value={defense}
+                      onChange={(e) => setDefense(Number(e.target.value))}
+                      className="h-7 text-xs"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-1.5 justify-end">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  onClick={resetForm}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" size="xs" disabled={!name.trim()}>
+                  Adicionar
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
     </div>
   );
 }

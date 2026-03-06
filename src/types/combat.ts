@@ -61,4 +61,5 @@ export interface Combat {
   currentPhase: Phase;
   actedCharacterIds: string[];
   fastTurnCharacterIds: string[];
+  pendingCharacterIds: string[];
 }
